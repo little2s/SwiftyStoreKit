@@ -96,11 +96,23 @@ class PaymentsController: TransactionController {
             payments.remove(at: paymentIndex)
             return true
         }
+        if transactionState == .deferred {
+            payment.callback(.failed(error: deferredError()))
+
+            paymentQueue.finishTransaction(transaction)
+            payments.remove(at: paymentIndex)
+            return true
+        }
 
         if transactionState == .restored {
             print("Unexpected restored transaction for payment \(transactionProductIdentifier)")
         }
         return false
+    }
+    
+    private func deferredError() -> SKError {
+        let nsError = NSError(domain: "com.SwiftyStoreKit", code: -999, userInfo: [ NSLocalizedDescriptionKey: "Payment deferred" ])
+        return SKError(_nsError: nsError)
     }
 
     func transactionError(for error: NSError?) -> SKError {
